@@ -14,7 +14,7 @@ env_configurations = {
     }
 }
 
-def fetch_k8s_logs(env="dev", log_level="all", time_period=None):
+def fetch_k8s_logs(env="dev", log_level="all", time_period=None, search_term=None):
     # Step 1: Fetch environment-specific configuration
     if env not in env_configurations:
         print(f"Error: Environment '{env}' is not configured.")
@@ -81,36 +81,44 @@ def fetch_k8s_logs(env="dev", log_level="all", time_period=None):
         )
 
         if logs.stdout:
-            # Filter logs based on the specified log level
-            filtered_logs = filter_logs(logs.stdout, log_level)
+            # Filter logs based on log level and search term
+            filtered_logs = filter_logs(logs.stdout, log_level, search_term)
             log_count = len(filtered_logs.splitlines())
-            # Print the filtered logs first...
+            # Print filtered logs
             print(filtered_logs)
-            # ...then print the count at the end.
+            # Print the count at the end
             print("=============================================================================================")
-            print(f"Total log entries for pod '{pod}' with level '{log_level}': {log_count}")
-            print("=============================================================================================")
+            print(f"Total log entries for pod '{pod}' with level '{log_level}'", end='')
+            if search_term:
+                print(f" and search term '{search_term}': {log_count}")
+            else:
+                print(f": {log_count}")
         else:
             print(f"No logs found for pod '{pod}'")
 
-def filter_logs(logs, log_level="all"):
-    """Filter logs based on the given log level."""
+def filter_logs(logs, log_level="all", search_term=None):
+    """Filter logs based on the given log level and optional search term."""
     log_lines = logs.splitlines()
     filtered_lines = []
     for line in log_lines:
-        if log_level == "all":
-            filtered_lines.append(line)
-        elif log_level == "error" and "error" in line.lower():
-            filtered_lines.append(line)
-        elif log_level == "warning" and "warning" in line.lower():
-            filtered_lines.append(line)
-        elif log_level == "info" and "info" in line.lower():
-            filtered_lines.append(line)
+        # Apply log level filtering if not set to 'all'
+        if log_level != "all":
+            if log_level == "error" and "error" not in line.lower():
+                continue
+            elif log_level == "warning" and "warning" not in line.lower():
+                continue
+            elif log_level == "info" and "info" not in line.lower():
+                continue
+        # Apply search term filtering if a term is provided
+        if search_term and search_term.lower() not in line.lower():
+            continue
+        filtered_lines.append(line)
     return "\n".join(filtered_lines)
 
 # Example usage:
 env = input("Enter the environment (dev, test): ").strip().lower()
 log_level = input("Enter the log level to filter by (error, warning, info, all): ").strip().lower() or "all"
 time_period = input("Enter the time period for logs (e.g., 5m, 1h, 48h, or leave blank for logs from the beginning): ").strip().lower()
+search_term = input("Enter a search term to filter logs (leave blank to include all logs): ").strip()
 
-fetch_k8s_logs(env, log_level, time_period)
+fetch_k8s_logs(env, log_level, time_period, search_term)
