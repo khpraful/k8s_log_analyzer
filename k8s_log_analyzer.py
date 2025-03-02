@@ -109,7 +109,7 @@ def filter_logs(logs, log_level="all"):
     return "\n".join(filtered_lines)
 
 # Example usage:
-env = input("Enter the environment (dev, qa, demo, prod): ").strip().lower()
+env = input("Enter the environment (dev, test): ").strip().lower()
 log_level = input("Enter the log level to filter by (error, warning, info, all): ").strip().lower() or "all"
 time_period = input("Enter the time period for logs (e.g., 5m, 1h, 48h, or leave blank for logs from the beginning): ").strip().lower()
 
